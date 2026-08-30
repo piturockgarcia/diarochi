@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>DiaroChi</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;touch-action:none}#app{width:100%;height:100%;display:grid;place-items:center;background:#000}video{width:100%;height:100%;object-fit:contain;display:block}.screen{position:absolute;inset:0;display:grid;place-items:center}.hidden{display:none!important}#play{position:absolute;left:50%;top:72%;transform:translate(-50%,-50%);border:0;border-radius:999px;padding:18px 48px;font:700 24px system-ui;color:#fff;background:rgba(0,0,0,.58);box-shadow:0 0 0 1px rgba(255,255,255,.35);cursor:pointer}#play:active{transform:translate(-50%,-50%) scale(.96)}#ripple{position:fixed;width:28px;height:28px;border:2px solid rgba(255,255,255,.8);border-radius:50%;pointer-events:none;opacity:0;z-index:20}.go{animation:r .45s ease-out}@keyframes r{0%{transform:translate(-50%,-50%) scale(.2);opacity:.8}100%{transform:translate(-50%,-50%) scale(4);opacity:0}}#game{position:absolute;inset:0}.hit{position:absolute;width:120px;height:120px;transform:translate(-50%,-50%);border:0;background:transparent;border-radius:50%;display:none}
+</style>
+</head>
+<body><main id="app">
+<div id="intro" class="screen"><video id="presentation" playsinline preload="auto"></video></div>
+<div id="title" class="screen hidden"><video id="titleVideo" playsinline preload="auto"></video><button id="play">PLAY</button></div>
+<div id="game" class="hidden"><video id="loop" playsinline muted preload="auto"></video><video id="actionVideo" playsinline preload="auto" class="hidden"></video><button id="hit" class="hit" aria-label="Interacción"></button></div>
+<div id="ripple"></div></main>
+<script>
+const $=id=>document.getElementById(id);const intro=$('intro'),title=$('title'),game=$('game'),presentation=$('presentation'),titleVideo=$('titleVideo'),loop=$('loop'),actionVideo=$('actionVideo'),hit=$('hit'),ripple=$('ripple');
+presentation.src='assets/videos/presentacion.mp4';titleVideo.src='assets/videos/titulo.mp4';loop.src='assets/videos/durmiendo.mp4';
+let step=1,busy=false;
+const actions={1:'assets/videos/se_destapa.mp4',2:'assets/videos/luz.mp4',3:'assets/videos/leo_matioli.mp4',4:'assets/videos/suena_cel.mp4',5:'assets/videos/llega_emmi.mp4'};
+function showTitle(){intro.classList.add('hidden');title.classList.remove('hidden');titleVideo.currentTime=0;titleVideo.play().catch(()=>{});}
+presentation.addEventListener('ended',showTitle);presentation.addEventListener('error',showTitle);presentation.play().catch(()=>{});
+$('play').addEventListener('pointerup',()=>{title.classList.add('hidden');game.classList.remove('hidden');step=1;busy=false;hit.style.display='block';loop.currentTime=0;loop.play().catch(()=>{});});
+function rippleAt(e){ripple.style.left=e.clientX+'px';ripple.style.top=e.clientY+'px';ripple.classList.remove('go');void ripple.offsetWidth;ripple.classList.add('go');}
+function trigger(e){if(busy||!actions[step])return;rippleAt(e);busy=true;hit.style.display='none';loop.pause();actionVideo.src=actions[step];actionVideo.classList.remove('hidden');actionVideo.currentTime=0;actionVideo.play().catch(()=>{});}
+hit.addEventListener('pointerup',trigger);actionVideo.addEventListener('ended',()=>{actionVideo.pause();actionVideo.classList.add('hidden');actionVideo.removeAttribute('src');actionVideo.load();loop.currentTime=0;loop.play().catch(()=>{});if(step<5)step++;else step=6;busy=false;hit.style.display=step<=5?'block':'none';});
+</script></body></html>
