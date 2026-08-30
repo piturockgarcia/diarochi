@@ -5,30 +5,31 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>DiaroChi</title>
 <style>
-*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;touch-action:none}#app{position:relative;width:100%;height:100%;overflow:hidden;background:#000}video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}.screen{position:absolute;inset:0}.hidden{display:none!important}#play{position:absolute;left:50%;bottom:9%;transform:translateX(-50%);min-width:160px;padding:15px 46px;border:1px solid rgba(255,255,255,.65);border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font:700 24px system-ui;letter-spacing:2px;cursor:pointer;z-index:5}#play:active{transform:translateX(-50%) scale(.96)}#game{position:absolute;inset:0}.hit{position:absolute;width:150px;height:150px;transform:translate(-50%,-50%);border:0;background:transparent;border-radius:50%;display:none;z-index:5}#ripple{position:fixed;width:32px;height:32px;border:2px solid rgba(255,255,255,.7);border-radius:50%;pointer-events:none;opacity:0;z-index:20}.go{animation:r .5s ease-out}@keyframes r{0%{transform:translate(-50%,-50%) scale(.15);opacity:.75}100%{transform:translate(-50%,-50%) scale(4.2);opacity:0}}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;touch-action:none}#app{position:relative;width:100%;height:100%;overflow:hidden;background:#000}video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}.screen{position:absolute;inset:0}.hidden{display:none!important}#play{position:absolute;left:50%;bottom:9%;transform:translateX(-50%);min-width:160px;padding:15px 46px;border:1px solid rgba(255,255,255,.65);border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font:700 24px system-ui;letter-spacing:2px;cursor:pointer;z-index:5}#play:active{transform:translateX(-50%) scale(.96)}#game{position:absolute;inset:0}.hit{position:absolute;width:150px;height:150px;transform:translate(-50%,-50%);border:0;background:transparent;border-radius:50%;display:none;z-index:5}.marker{position:absolute;width:64px;height:64px;transform:translate(-50%,-50%);display:none;z-index:6;border:2px solid rgba(255,255,255,.9);border-radius:50%;background:rgba(0,0,0,.38);color:#fff;font:800 25px system-ui;text-align:center;line-height:60px;text-shadow:0 1px 3px #000;pointer-events:none;box-shadow:0 0 0 5px rgba(255,255,255,.12)}.marker.active{display:block;animation:pulse 1.5s ease-in-out infinite}.marker.done{display:block;opacity:.25;transform:translate(-50%,-50%) scale(.7)}@keyframes pulse{0%,100%{box-shadow:0 0 0 4px rgba(255,255,255,.12)}50%{box-shadow:0 0 0 10px rgba(255,255,255,.24)}}#ripple{position:fixed;width:32px;height:32px;border:2px solid rgba(255,255,255,.7);border-radius:50%;pointer-events:none;opacity:0;z-index:20}.go{animation:r .5s ease-out}@keyframes r{0%{transform:translate(-50%,-50%) scale(.15);opacity:.75}100%{transform:translate(-50%,-50%) scale(4.2);opacity:0}}
 </style>
 </head>
 <body><main id="app">
 <section id="intro" class="screen"><video id="presentation" playsinline muted preload="auto"></video></section>
 <section id="title" class="screen hidden"><video id="titleVideo" playsinline muted preload="auto"></video><button id="play">PLAY</button></section>
-<section id="game" class="hidden"><video id="loop" playsinline muted preload="auto"></video><video id="actionVideo" playsinline preload="auto" class="hidden"></video><button id="hit" class="hit" aria-label="Punto de interacción"></button></section>
+<section id="game" class="hidden"><video id="loop" playsinline muted preload="auto"></video><video id="actionVideo" playsinline preload="auto" class="hidden"></video><button id="hit" class="hit" aria-label="Punto de interacción"></button><div id="m1" class="marker">1</div><div id="m2" class="marker">2</div><div id="m3" class="marker">3</div><div id="m4" class="marker">4</div><div id="m5" class="marker">5</div></section>
 <div id="ripple"></div>
 </main>
 <script>
-const $=id=>document.getElementById(id);
-const intro=$('intro'),title=$('title'),game=$('game'),presentation=$('presentation'),titleVideo=$('titleVideo'),loop=$('loop'),actionVideo=$('actionVideo'),hit=$('hit'),ripple=$('ripple');
+const $=id=>document.getElementById(id);const intro=$('intro'),title=$('title'),game=$('game'),presentation=$('presentation'),titleVideo=$('titleVideo'),loop=$('loop'),actionVideo=$('actionVideo'),hit=$('hit'),ripple=$('ripple');
+const markers=[null,$('m1'),$('m2'),$('m3'),$('m4'),$('m5')];
 const actions={1:'assets/videos/se_destapa.mp4',2:'assets/videos/luz.mp4',3:'assets/videos/leo_matioli.mp4',4:'assets/videos/suena_cel.mp4',5:'assets/videos/llega_emmi.mp4'};
 let step=1,busy=false;
 presentation.src='assets/videos/presentacion.mp4';titleVideo.src='assets/videos/titulo.mp4';loop.src='assets/videos/durmiendo.mp4';loop.loop=true;
+// Posiciones iniciales: 1=cama, 2=luz, 3=tele, 4=celular, 5=abajo derecha.
+const points={1:{x:78,y:55},2:{x:63,y:42},3:{x:25,y:55},4:{x:50,y:35},5:{x:88,y:82}};
+function setPoint(n){const p=points[n];if(!p)return;hit.style.left=p.x+'%';hit.style.top=p.y+'%';markers[n].style.left=p.x+'%';markers[n].style.top=p.y+'%';markers[n].classList.add('active');}
+function resetMarkers(){for(let i=1;i<=5;i++){markers[i].classList.remove('active','done');markers[i].style.display='none';}}
 function showTitle(){intro.classList.add('hidden');title.classList.remove('hidden');titleVideo.currentTime=0;titleVideo.play().catch(()=>{});}
-presentation.addEventListener('ended',showTitle);presentation.addEventListener('error',showTitle);
-presentation.play().catch(()=>{document.addEventListener('pointerdown',()=>presentation.play().catch(()=>{}),{once:true});});
+presentation.addEventListener('ended',showTitle);presentation.addEventListener('error',showTitle);presentation.play().catch(()=>{document.addEventListener('pointerdown',()=>presentation.play().catch(()=>{}),{once:true});});
 titleVideo.addEventListener('ended',()=>{titleVideo.currentTime=0;titleVideo.play().catch(()=>{});});
-$('play').addEventListener('pointerup',()=>{title.classList.add('hidden');game.classList.remove('hidden');step=1;busy=false;setHitPosition(1);hit.style.display='block';loop.currentTime=0;loop.play().catch(()=>{});});
-const points={1:{x:78,y:55},2:{x:63,y:42},3:{x:25,y:55},4:{x:50,y:35},5:{x:88,y:45}};
-function setHitPosition(n){const p=points[n];if(p){hit.style.left=p.x+'%';hit.style.top=p.y+'%';}}
+$('play').addEventListener('pointerup',()=>{title.classList.add('hidden');game.classList.remove('hidden');step=1;busy=false;resetMarkers();setPoint(1);hit.style.display='block';loop.currentTime=0;loop.play().catch(()=>{});});
 function rippleAt(e){ripple.style.left=e.clientX+'px';ripple.style.top=e.clientY+'px';ripple.classList.remove('go');void ripple.offsetWidth;ripple.classList.add('go');}
-function trigger(e){if(busy||!actions[step])return;rippleAt(e);busy=true;hit.style.display='none';loop.pause();actionVideo.src=actions[step];actionVideo.classList.remove('hidden');actionVideo.currentTime=0;actionVideo.play().catch(()=>{});}
+function trigger(e){if(busy||!actions[step])return;rippleAt(e);busy=true;hit.style.display='none';markers[step].classList.remove('active');markers[step].classList.add('done');loop.pause();actionVideo.src=actions[step];actionVideo.classList.remove('hidden');actionVideo.currentTime=0;actionVideo.play().catch(()=>{});}
 hit.addEventListener('pointerup',trigger);
-actionVideo.addEventListener('ended',()=>{actionVideo.pause();actionVideo.classList.add('hidden');actionVideo.removeAttribute('src');actionVideo.load();loop.currentTime=0;loop.play().catch(()=>{});step++;busy=false;if(actions[step]){setHitPosition(step);hit.style.display='block';}});
+actionVideo.addEventListener('ended',()=>{actionVideo.pause();actionVideo.classList.add('hidden');actionVideo.removeAttribute('src');actionVideo.load();loop.currentTime=0;loop.play().catch(()=>{});step++;busy=false;if(actions[step]){setPoint(step);hit.style.display='block';}});
 </script></body></html>
